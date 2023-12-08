@@ -2,7 +2,6 @@
 # Prérequis: One angle by SeqNum
 
 # Parameters
-
 STACKH=2
 STACKW=2
 VOLNUMASVID=1
@@ -12,7 +11,7 @@ CHAPNUM=0
 #set -x
 add() { n="$@"; bc <<< "${n// /+}"; }
 
-echo "== Begin =="
+echo "[$(date)] == Begin =="
 # Clean file
 rm -f listSeqID listAngle
 rm -f AllAngle_*.mkv MultiAngle_*.mp4 *.encode
@@ -41,7 +40,7 @@ fi;
 
 for SEQNUM in ${SEQNUMS[@]}; do
     VOLNUM=$(( VOLNUM + 1 ))
-    echo " ==== Treat ${SEQNUM} / Vol ${VOLNUM} ===="
+    echo "[$(date)]  ==== Treat ${SEQNUM} / Vol ${VOLNUM} ===="
 
     # Cleaning files
     rm -f AllAngle_${SEQNUM}.mkv MultiAngle_${SEQNUM}.mp4
@@ -147,9 +146,9 @@ for SEQNUM in ${SEQNUMS[@]}; do
     else
         COMPLEXFILTER=${COMPLEXFILTER#?}
     fi
-    echo "   + Mixing"
+    echo "[$(date)]    + Mixing"
     ffmpeg ${INPUTS} -filter_complex "${COMPLEXFILTER}" -map "[vid]" MultiAngle_${SEQNUM}.mp4 > MultiAngle_${SEQNUM}.encode 2>&1
-    echo "   + Merging"
+    echo "[$(date)]    + Merging"
     mkvmerge -o AllAngle_${SEQNUM}.mkv --track-name 0:MultiAngle MultiAngle_${SEQNUM}.mp4 ${MERGE} > AllAngle_${SEQNUM}.encode 2>&1
 
     cp -l MultiAngle_${SEQNUM}.mp4 ByVol/Vol${VOLNUMSTR}-MultiAngle.mp4
@@ -168,14 +167,14 @@ ANGLES+=(MultiAngle)
 pushd ByVol
 MERGE=""
 for T in ${ANGLES[@]}; do
-    echo " ==== Treat ${T} ===="
+    echo "[$(date)]  ==== Treat ${T} ===="
     CHAPNUM=0
     TIMESTAMP=0
     START=0
     NUM=$(ls -1 Vol*-${T}.mp4|wc -l)
     if [[ ${NUM} > 0 ]]; then
         echo -ne ";FFMETADATA1\ntitle=${T}\nartist=ChallengeIndoor\n\n" > ${T}.chapt.ffmpeg
-        echo "   + Chaptering"
+        echo "[$(date)]    + Chaptering"
         for V in Vol*-${T}.mp4; do
             CHAPNUM=$((CHAPNUM + 1))
             TITRE=$(echo -ne "$V" |cut -d '-' -f 1)
@@ -188,9 +187,9 @@ for T in ${ANGLES[@]}; do
             echo -ne "file '${V}'\n" >> ${T}.concat
             TIMESTAMP=$(add ${TIMESTAMP} ${TIME})
         done
-        echo "   + Concat"
+        echo "[$(date)]    + Concat"
         ffmpeg -f concat -safe 0 -i ${T}.concat -c copy ${T}-nochapt.mp4 >${T}-nochapt.encode 2>&1
-        echo "   + Chapter"
+        echo "[$(date)]    + Chapter"
         ffmpeg -i ${T}-nochapt.mp4 -i ${T}.chapt.ffmpeg -map_metadata 1 -c copy ${T}.mp4 >${T}.encode 2>&1
         if [[ ${T} == "MultiAngle" ]]; then
             # Add chapter only one time and MultiAngle as first track
@@ -200,14 +199,14 @@ for T in ${ANGLES[@]}; do
         fi
     fi
 done
-echo " ==== Merging ===="
+echo "[$(date)]  ==== Merging ===="
 mkvmerge -o AllAngle.mkv ${MERGE} >AllAngle.encode 2>&1
 rm -f *-nochapt.mp4
 
 popd
 
 mkdir Rendu
-echo " ==== Zipping ===="
+echo "[$(date)]  ==== Zipping ===="
 cp -l ByVol/*.mp4 ByVol/*.mkv Rendu/
 
-echo "== End =="
+echo "[$(date)] == End =="

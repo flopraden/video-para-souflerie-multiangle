@@ -1,0 +1,9 @@
+#!/bin/bash
+for D in *; do
+    EQ=$(grep ${D} ../listing-equipe |cut -d ';' -f 2)
+    if [[ "x${EQ}" == "x" ]]; then
+        EQ="${D}"
+    fi
+    echo -n "${EQ} => ";  rclone link FCorp-GD:/Shared/Para/Souflerie/ChallengeIndoorAerokart2023/${EQ}
+done
+
